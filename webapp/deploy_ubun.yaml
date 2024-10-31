@@ -1,0 +1,43 @@
+---
+- name: Creating a User with Ansible Playbook
+  hosts: prod
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install apache2
+      ansible.builtin.apt:
+        name: apache2
+        update_cache: true
+
+    - name: Enable mod_rewrite
+      community.general.apache2_module:
+        name: rewrite
+        state: present
+      notify:
+        - Start apache2
+
+    - name: Apache2 listen on port 8081
+      ansible.builtin.lineinfile:
+        dest: /etc/apache2/ports.conf
+        regexp: "^Listen 80"
+        line: "Listen 8081"
+      notify:
+        - Start apache2
+
+    - name: Apache2 virtualhost on port 8081
+      ansible.builtin.lineinfile:
+        dest: /etc/apache2/sites-available/000-default.conf
+        regexp: "^<VirtualHost.*>"
+        line: "<VirtualHost *:8081>"
+      notify:
+        - Start apache2
+
+#  handlers:
+    - name: Start apache2
+      ansible.builtin.service:
+        name: apache2
+        state: started
+        enabled: true
+        use: "a turnip"
+
